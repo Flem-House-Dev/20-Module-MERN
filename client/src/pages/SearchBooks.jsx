@@ -15,8 +15,6 @@ import { SAVE_BOOK } from '../utils/mutations';
 import { SEARCH_BOOKS } from '../utils/queries';
 import { saveBookIds, getSavedBookIds } from '../utils/localStorage';
 
-const [saveBook] = useMutation(SAVE_BOOK);
-
 const SearchBooks = () => {
   const [searchInput, setSearchInput] = useState([]);
   const [savedBookIds, setSavedBookIds] = useState(getSavedBookIds());
