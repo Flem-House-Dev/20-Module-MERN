@@ -19,8 +19,6 @@ const SearchBooks = () => {
     skip: !searchInput,
   });
 
-  
-
   const [saveBook] = useMutation(SAVE_BOOK);
 
   // set up useEffect hook to save `savedBookIds` list to localStorage on component unmount
@@ -74,7 +72,20 @@ const SearchBooks = () => {
   // create function to handle saving a book to our database
   const handleSaveBook = async (bookId) => {
     // find the book in `searchedBooks` state by the matching id
-    const bookToSave = data.searchBooks.find((book) => book.bookId === bookId);
+    // const bookToSave = data.searchBooks.find((book) => book.bookId === bookId);
+    const foundBook = data.searchBooks.find((book) => book.bookId === bookId);
+
+    if (!foundBook) {
+      // Handle case where book is not found
+      return;
+    }
+
+    const bookToSave = { ...foundBook };
+
+    console.log("bookToSave:", bookToSave);
+
+    // remove __typename from bookToSave object
+    const { __typename, ...bookData } = bookToSave;
 
     // get token
     const token = Auth.loggedIn() ? Auth.getToken() : null;
@@ -84,19 +95,21 @@ const SearchBooks = () => {
     }
 
     try {
-      // const response = await saveBook(bookToSave, token);
       await saveBook({
-        variables: { input: bookToSave },
+        variables: { input: bookData },
       });
-
-      // if (!response.ok) {
-      //   throw new Error('something went wrong!');
-      // }
 
       // if book successfully saves to user's account, save book id to state
       setSavedBookIds([...savedBookIds, bookToSave.bookId]);
+      refetch();
     } catch (err) {
-      console.error(err);
+      console.error("Error saving book:", err);
+      if (err.graphQLErrors) {
+        console.error("GraphQL errors:", err.graphQLErrors);
+      }
+      if (err.networkError) {
+        console.error("Network error:", err.networkError);
+      }
     }
   };
 

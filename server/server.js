@@ -9,10 +9,18 @@ const db = require('./config/connection');
 
 const PORT = process.env.PORT || 3001;
 const app = express();
+
 const server = new ApolloServer({
   typeDefs,
   resolvers,
-  context: expressMiddleware,
+  // context: expressMiddleware,
+  context: ({ req }) => {
+    // Extract user information from the request
+    const user = req.user; // Assuming you have a user object in the request
+
+    return { user };
+  },
+
 });
 
 const startApolloServer = async () => {

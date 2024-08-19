@@ -1,7 +1,7 @@
 // const { default: SearchBooks } = require('../../client/src/pages/SearchBooks');
 const { User } = require('../models');
 const { signToken } = require('../utils/auth');
-const { AuthenticationError, UserInputError } = require('@apollo/server/express4');
+// const { AuthenticationError, UserInputError } = require('@apollo/server/express4');
 
 const resolvers = {
     Query: {
@@ -10,7 +10,7 @@ const resolvers = {
           return User.findOne({ _id: context.user._id }).populate('savedBooks');
         }
     
-        throw new AuthenticationError('Not logged in');
+        // throw new AuthenticationError('Not logged in');
         },
         searchBooks: async (_, { query }) => {
             try {
@@ -42,13 +42,13 @@ const resolvers = {
         const user = await User.findOne({ email });
     
         if (!user) {
-            throw new AuthenticationError('Incorrect credentials');
+            // throw new AuthenticationError('Incorrect credentials');
         }
     
         const correctPw = await user.isCorrectPassword(password);
     
         if (!correctPw) {
-            throw new AuthenticationError('Incorrect credentials');
+            // throw new AuthenticationError('Incorrect credentials');
         }
     
         const token = signToken(user);
@@ -71,17 +71,27 @@ const resolvers = {
             }
         },
         saveBook: async (parent, { input }, context) => {
+          console.log('Saving book:', input);
+          console.log('Context:', context);
         if (context.user) {
+
+          try {
+            console.log('User ID:', context.user._id);
             const updatedUser = await User.findByIdAndUpdate(
             { _id: context.user._id },
             { $addToSet: { savedBooks: input } },
             { new: true, runValidators: true }
             ).populate('savedBooks');
-    
+            console.log('Updated user:', updatedUser);
             return updatedUser;
+            
+          } catch (error) {
+            console.error('Error saving book:', error);
+            throw new Error('Failed to save book');
+          }
         }
     
-        throw new AuthenticationError('You need to be logged in!');
+        // throw new AuthenticationError('You need to be logged in!');
         },
         removeBook: async (parent, { bookId }, context) => {
         if (context.user) {
@@ -94,7 +104,7 @@ const resolvers = {
             return updatedUser;
         }
     
-        throw new AuthenticationError('You need to be logged in!');
+        // throw new AuthenticationError('You need to be logged in!');
         },
     },
     };
