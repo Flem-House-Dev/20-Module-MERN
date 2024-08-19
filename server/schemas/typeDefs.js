@@ -20,6 +20,7 @@ type Auth {
 }
 type Query {
     me: User
+    searchBooks(query: String!): [Book]
 }
     input BookInput {
         bookId: String!

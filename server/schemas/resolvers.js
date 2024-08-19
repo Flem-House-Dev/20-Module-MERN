@@ -1,3 +1,4 @@
+// const { default: SearchBooks } = require('../../client/src/pages/SearchBooks');
 const { User } = require('../models');
 
 const resolvers = {
@@ -9,6 +10,30 @@ const resolvers = {
     
         throw new AuthenticationError('Not logged in');
         },
+        searchBooks: async (_, { query }) => {
+            try {
+              const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}`);
+              
+              if (!response.ok) {
+                throw new Error('Failed to fetch from Google Books API');
+              }
+      
+              const data = await response.json();
+      
+              // Map the Google Books API response to your GraphQL schema
+              return data.items.map(book => ({
+                bookId: book.id,
+                authors: book.volumeInfo.authors || [],
+                description: book.volumeInfo.description || '',
+                title: book.volumeInfo.title,
+                image: book.volumeInfo.imageLinks?.thumbnail || '',
+                link: book.volumeInfo.infoLink || ''
+              }));
+            } catch (error) {
+              console.error('Error searching books:', error);
+              throw new Error('Failed to search books');
+            }
+          },
     },
     Mutation: {
         login: async (parent, { email, password }) => {
@@ -33,11 +58,11 @@ const resolvers = {
     
         return { token, user };
         },
-        saveBook: async (parent, { bookData }, context) => {
+        saveBook: async (parent, { input }, context) => {
         if (context.user) {
             const updatedUser = await User.findByIdAndUpdate(
             { _id: context.user._id },
-            { $addToSet: { savedBooks: bookData } },
+            { $addToSet: { savedBooks: input } },
             { new: true, runValidators: true }
             ).populate('savedBooks');
     
