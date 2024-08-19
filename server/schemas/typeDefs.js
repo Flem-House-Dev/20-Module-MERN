@@ -1,4 +1,4 @@
-const typeDefs = gql`
+const typeDefs = `
     type User {
       _id: ID!
     username: String!
@@ -36,3 +36,5 @@ type Query {
         removeBook(bookId: String!): User
     }
 `;
+
+module.exports = typeDefs;
