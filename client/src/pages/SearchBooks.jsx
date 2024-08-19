@@ -9,23 +9,29 @@ import {
 } from 'react-bootstrap';
 
 import Auth from '../utils/auth';
-import { saveBook, searchGoogleBooks } from '../utils/API';
+
+import { useMutation, useQuery } from '@apollo/client';
+import { SAVE_BOOK } from '../utils/mutations';
+import { SEARCH_BOOKS } from '../utils/queries';
 import { saveBookIds, getSavedBookIds } from '../utils/localStorage';
 
-const SearchBooks = () => {
-  // create state for holding returned google api data
-  const [searchedBooks, setSearchedBooks] = useState([]);
-  // create state for holding our search field data
-  const [searchInput, setSearchInput] = useState('');
+const [saveBook] = useMutation(SAVE_BOOK);
 
-  // create state to hold saved bookId values
+const SearchBooks = () => {
+  const [searchInput, setSearchInput] = useState([]);
   const [savedBookIds, setSavedBookIds] = useState(getSavedBookIds());
+
+  const [searchBooks, { loading, data }] = useQuery(SEARCH_BOOKS, {
+    variables: { searchInput },
+  });
+
+  const [saveBook] = useMutation(SAVE_BOOK);
 
   // set up useEffect hook to save `savedBookIds` list to localStorage on component unmount
   // learn more here: https://reactjs.org/docs/hooks-effect.html#effects-with-cleanup
   useEffect(() => {
     return () => saveBookIds(savedBookIds);
-  });
+  }, [savedBookIds]);
 
   // create method to search for books and set state on form submit
   const handleFormSubmit = async (event) => {
@@ -36,23 +42,33 @@ const SearchBooks = () => {
     }
 
     try {
-      const response = await searchGoogleBooks(searchInput);
+      await searchBooks({ variables: { searchInput } });
+      // const response = await searchGoogleBooks(searchInput);
 
-      if (!response.ok) {
-        throw new Error('something went wrong!');
-      }
+      // if (!response.ok) {
+      //   throw new Error('something went wrong!');
+      // }
 
-      const { items } = await response.json();
+      // const { items } = await response.json();
+        const items = data?.searchBooks || [];
 
-      const bookData = items.map((book) => ({
-        bookId: book.id,
-        authors: book.volumeInfo.authors || ['No author to display'],
-        title: book.volumeInfo.title,
-        description: book.volumeInfo.description,
-        image: book.volumeInfo.imageLinks?.thumbnail || '',
-      }));
+      // const bookData = items.map((book) => ({
+      //   bookId: book.id,
+      //   authors: book.volumeInfo.authors || ['No author to display'],
+      //   title: book.volumeInfo.title,
+      //   description: book.volumeInfo.description,
+      //   image: book.volumeInfo.imageLinks?.thumbnail || '',
+      // }));
 
-      setSearchedBooks(bookData);
+      //   const bookData = items.map((book) => ({
+      //   bookId: book.id,
+      //   authors: book.volumeInfo.authors || ['No author to display'],
+      //   title: book.volumeInfo.title,
+      //   description: book.volumeInfo.description,
+      //   image: book.volumeInfo.imageLinks?.thumbnail || '',
+      // }));
+
+      // setSearchedBooks(bookData);
       setSearchInput('');
     } catch (err) {
       console.error(err);
@@ -62,7 +78,7 @@ const SearchBooks = () => {
   // create function to handle saving a book to our database
   const handleSaveBook = async (bookId) => {
     // find the book in `searchedBooks` state by the matching id
-    const bookToSave = searchedBooks.find((book) => book.bookId === bookId);
+    const bookToSave = data.searchBooks.find((book) => book.bookId === bookId);
 
     // get token
     const token = Auth.loggedIn() ? Auth.getToken() : null;
@@ -72,7 +88,10 @@ const SearchBooks = () => {
     }
 
     try {
-      const response = await saveBook(bookToSave, token);
+      // const response = await saveBook(bookToSave, token);
+      const { data } = await saveBook({
+        variables: { input: bookToSave },
+      });
 
       if (!response.ok) {
         throw new Error('something went wrong!');
@@ -84,6 +103,8 @@ const SearchBooks = () => {
       console.error(err);
     }
   };
+
+  const searchedBooks = loading ? [] : data?.searchBooks || [];
 
   return (
     <>
