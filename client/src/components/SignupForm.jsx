@@ -42,11 +42,21 @@ const SignupForm = () => {
       // }
 
       // const { token, user } = await response.json();
+      const { user } = data.addUser;
       console.log(user);
       // Auth.login(token);
       Auth.login(data.addUser.token);
     } catch (err) {
       console.error(err);
+
+        console.error('Error details:', err.message);
+  if (err.graphQLErrors) {
+    console.error('GraphQL errors:', err.graphQLErrors);
+  }
+  if (err.networkError) {
+    console.error('Network error:', err.networkError);
+  }
+
       setShowAlert(true);
     }
 

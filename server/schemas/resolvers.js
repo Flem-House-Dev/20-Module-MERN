@@ -1,5 +1,7 @@
 // const { default: SearchBooks } = require('../../client/src/pages/SearchBooks');
 const { User } = require('../models');
+const { signToken } = require('../utils/auth');
+const { AuthenticationError, UserInputError } = require('@apollo/server/express4');
 
 const resolvers = {
     Query: {
@@ -52,11 +54,21 @@ const resolvers = {
         const token = signToken(user);
         return { token, user };
         },
-        addUser: async (parent, args) => {
-        const user = await User.create(args);
-        const token = signToken(user);
-    
-        return { token, user };
+        addUser: async (parent, { username, email, password }) => {
+            try {
+              const user = await User.create({ username, email, password });
+              const token = signToken(user);
+              return { token, user };
+            } catch (error) {
+                console.log(error);
+              if (error.code === 11000) {
+                const field = Object.keys(error.keyValue)[0];
+                throw new UserInputError(`${field.charAt(0).toUpperCase() + field.slice(1)} already exists`, {
+                  invalidArgs: { [field]: error.keyValue[field] }
+                });
+              }
+              throw new Error('Error adding user');
+            }
         },
         saveBook: async (parent, { input }, context) => {
         if (context.user) {
